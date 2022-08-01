@@ -13,6 +13,9 @@ use std::sync::Mutex;
 lazy_static! {
   static   ref   WORKING_PROXIES:Mutex<Vec<String>> = Mutex::new(vec![]);
 }
+
+const  PROXIES_FILE:&str = "proxies.txt";
+const URLS_FILE:&str = "urls.txt";
 fn search_google(query:&str) ->String{
 
   let client = reqwest::blocking::Client::builder()
@@ -64,13 +67,13 @@ fn test_proxies(proxies:Vec<String>)->Vec<String>{
 #[tauri::command]
 fn append_urls_to_file(list:Vec<String>){
 // check if urls.txt exists if not create one;
-let urls_file = "../urls.txt";
-if !std::path::Path::new(urls_file).exists(){
-   File::create(urls_file).unwrap();
+
+if !std::path::Path::new(URLS_FILE).exists(){
+   File::create(URLS_FILE).unwrap();
 }
     let mut file = std::fs::OpenOptions::new()
     .append(true)
-    .open(urls_file)
+    .open(URLS_FILE)
     .unwrap();
     for url in list {
       file.write_all(url.as_bytes()).unwrap();
@@ -83,13 +86,13 @@ if !std::path::Path::new(urls_file).exists(){
 
 #[tauri::command]
 fn get_proxies_from_file()->String{
-let proxies_file = "../proxies.txt";
-if !std::path::Path::new(proxies_file).exists(){
+
+if !std::path::Path::new(PROXIES_FILE).exists(){
   // create proxy file
-  File::create(proxies_file).unwrap();
+  File::create(PROXIES_FILE).unwrap();
 }
 //read proxy file
-std::fs::read_to_string(proxies_file).unwrap()
+std::fs::read_to_string(PROXIES_FILE).unwrap()
 
 }
 
