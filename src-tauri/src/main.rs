@@ -10,17 +10,60 @@ use std::fs::File;
 use tauri::Window;
 use std::time::Duration;
 use std::sync::Mutex;
+use serde::{Serialize, Deserialize};
+use rand::seq::IteratorRandom;
+use rand::prelude::SliceRandom;
+
 lazy_static! {
   static   ref   WORKING_PROXIES:Mutex<Vec<String>> = Mutex::new(vec![]);
 }
+#[derive(Serialize, Deserialize,Debug)]
+struct Sleep{
+  min:u64,
+  max:u64,
+}
+
 
 const  PROXIES_FILE:&str = "proxies.txt";
 const URLS_FILE:&str = "urls.txt";
-fn search_google(query:&str) ->String{
+const UAGENTS_FILE:&str = "user_agents.txt";
+
+
+
+
+fn search_google(query:&str,proxies:&mut Vec<String>) ->String{
+let proxy_length = proxies.len();
+let user_agents =  std::fs::read_to_string(UAGENTS_FILE)
+.expect("Something went wrong reading the UAGENTS_FILE");
+let user_agents = user_agents.split("\r\n").filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+let user_agent = *user_agents.choose(&mut rand::thread_rng()).unwrap();
+while proxies.len() > 0 {
+  println!("{} left to try from {}",proxies.len(),proxy_length);
+    let proxy = proxies.pop().unwrap();
+    let client = reqwest::blocking::Client::builder()
+    .proxy(reqwest::Proxy::all(&proxy).unwrap())
+    .build().unwrap();
+  let   result =  match client.get(&format!("https://www.google.com/search?q={}",query)).header("user-agent", user_agent).send(){
+      Ok(resp)=>{
+        let resp_txt = resp.text().unwrap().to_string();
+        if  !resp_txt.contains("sending requests very quickly") {
+          resp_txt
+      }else{
+        "404".to_string()
+        }},
+      Err(_)=> "404".to_string()
+    };
+    if result != "404" {
+        return result;
+    }
+}
 
   let client = reqwest::blocking::Client::builder()
   .build().unwrap();
-  client.get(&format!("https://www.google.com/search?q={}",query)).header("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36").send().unwrap().text().unwrap().to_string()
+client.get(&format!("https://www.google.com/search?q={}",query)).header("user-agent", user_agent).send().unwrap().text().unwrap().to_string()
+ 
+
+
 }
 
 
@@ -34,17 +77,22 @@ fn read_html() ->String{
 }
 
 #[tauri::command]
-fn start_crawling(window:Window,keywords:Vec<String>){
+fn start_crawling(window:Window,keywords:Vec<String>,proxies:Vec<String>,sleep:Sleep){
+  println!("{:?}",sleep);
   std::thread::spawn(move ||{
     let mut count = 0;
     for keyword in &keywords {
+      let mut proxies = proxies.clone();
       println!("{:?}",keywords);
       count+=1;
-      let html = search_google(&keyword);
+      let html = search_google(&keyword,&mut proxies);
       window.emit("parse_html",html).unwrap();
       let json = format!("{{\"keyword\":\"{}\",\"progress\":{{\"count\":\"{}\" , \"maxValue\": \"{}\"      }}        }}",keyword,count,keywords.len());
       window.emit("progress",json).unwrap();
-      std::thread::sleep(Duration::from_millis(5000));
+      //random between numbers between min and max
+      let sleep_duration = (sleep.min..=sleep.max).choose(&mut rand::thread_rng()).unwrap();
+     println!("sleep_duration: {}",sleep_duration);
+      std::thread::sleep(Duration::from_millis(sleep_duration));
     }
   });
 }
