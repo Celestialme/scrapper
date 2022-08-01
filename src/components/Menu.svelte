@@ -34,7 +34,7 @@
     <textarea bind:value={$proxy_list}></textarea>
     <div>
         <button on:click={testProxies}>Test Proxies</button>
-        <button>Save Proxies</button>
+        <button on:click={()=>invoke("save_proxies",{proxies:$proxy_list})}>Save Proxies</button>
     </div>
    </div>
    {/if }

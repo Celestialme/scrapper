@@ -109,6 +109,13 @@ fn test_proxies(proxies:Vec<String>)->Vec<String>{
   working_proxies
 }
 
+#[tauri::command]
+fn save_proxies(proxies:String){
+// write to a file
+  let mut file = File::create(PROXIES_FILE).unwrap();
+    file.write_all(proxies.as_bytes()).unwrap();
+}
+
 
 
 
@@ -152,7 +159,7 @@ std::fs::read_to_string(PROXIES_FILE).unwrap()
 
 fn main() {
   tauri::Builder::default()
-  .invoke_handler(tauri::generate_handler![start_crawling,read_html,append_urls_to_file,test_proxies,get_proxies_from_file])
+  .invoke_handler(tauri::generate_handler![start_crawling,read_html,append_urls_to_file,test_proxies,save_proxies,get_proxies_from_file])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
