@@ -24,25 +24,26 @@ struct Sleep{
 }
 
 
-const  PROXIES_FILE:&str = "proxies.txt";
-const URLS_FILE:&str = "urls.txt";
-const UAGENTS_FILE:&str = "user_agents.txt";
+const  PROXIES_FILE:&str = "../proxies.txt";
+const URLS_FILE:&str = "../urls.txt";
+const UAGENTS_FILE:&str = "../user_agents.txt";
 
 
 
 
-fn search_google(query:&str,proxies:&mut Vec<String>) ->String{
+fn search_google(window:&Window,query:&str,proxies:&mut Vec<String>) ->String{
 let proxy_length = proxies.len();
 let user_agents =  std::fs::read_to_string(UAGENTS_FILE)
 .expect("Something went wrong reading the UAGENTS_FILE");
 let user_agents = user_agents.split("\r\n").filter(|s| !s.is_empty()).collect::<Vec<&str>>();
 let user_agent = *user_agents.choose(&mut rand::thread_rng()).unwrap();
 while proxies.len() > 0 {
-  println!("{} left to try from {}",proxies.len(),proxy_length);
-    let proxy = proxies.pop().unwrap();
-    let client = reqwest::blocking::Client::builder()
-    .proxy(reqwest::Proxy::all(&proxy).unwrap())
-    .build().unwrap();
+  
+  let proxy = proxies.pop().unwrap();
+  let client = reqwest::blocking::Client::builder()
+  .proxy(reqwest::Proxy::all(&proxy).unwrap())
+  .build().unwrap();
+  window.emit("proxy_info",format!("trying proxy № {} from {}",proxy_length-proxies.len(),proxy_length)).unwrap();
   let   result =  match client.get(&format!("https://www.google.com/search?q={}",query)).header("user-agent", user_agent).send(){
       Ok(resp)=>{
         let resp_txt = resp.text().unwrap().to_string();
@@ -57,7 +58,9 @@ while proxies.len() > 0 {
         return result;
     }
 }
-
+if proxy_length > 0{
+  window.emit("proxy_info","All proxies failed using your ip").unwrap();
+}
   let client = reqwest::blocking::Client::builder()
   .build().unwrap();
 client.get(&format!("https://www.google.com/search?q={}",query)).header("user-agent", user_agent).send().unwrap().text().unwrap().to_string()
@@ -78,22 +81,33 @@ fn read_html() ->String{
 
 #[tauri::command]
 fn start_crawling(window:Window,keywords:Vec<String>,proxies:Vec<String>,sleep:Sleep){
-  println!("{:?}",sleep);
+  
   std::thread::spawn(move ||{
     let mut count = 0;
+    let keywords_length = keywords.len();
     for keyword in &keywords {
-      let mut proxies = proxies.clone();
-      println!("{:?}",keywords);
+      window.emit("sleep_info","work in progress").unwrap();
+      let json = format!("{{\"keyword\":\"{}\",\"progress\":{{\"count\":\"{}\" , \"maxValue\": \"{}\"      }}        }}",keyword,count,keywords.len());
+      window.emit("progress",json).unwrap();
       count+=1;
-      let html = search_google(&keyword,&mut proxies);
+      let mut proxies = proxies.clone();
+      
+      
+      
+      let html = search_google(&window,&keyword,&mut proxies);
       window.emit("parse_html",html).unwrap();
       let json = format!("{{\"keyword\":\"{}\",\"progress\":{{\"count\":\"{}\" , \"maxValue\": \"{}\"      }}        }}",keyword,count,keywords.len());
       window.emit("progress",json).unwrap();
       //random between numbers between min and max
       let sleep_duration = (sleep.min..=sleep.max).choose(&mut rand::thread_rng()).unwrap();
-     println!("sleep_duration: {}",sleep_duration);
-      std::thread::sleep(Duration::from_millis(sleep_duration));
+     
+     window.emit("sleep_info",format!("sleeping for {} ms",sleep_duration)).unwrap();
+     if count <  keywords_length{
+       std::thread::sleep(Duration::from_millis(sleep_duration));
+     }
+    
     }
+    window.emit("sleep_info","task has been finished").unwrap();
   });
 }
 

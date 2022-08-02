@@ -18,23 +18,23 @@
 {#if showMenu}
 <div class="menu">
    <div class="menu-item proxies" bind:this={proxy_div} >
-    <span>Use Proxies</span>
-    <button on:click={()=>$use_proxy=!$use_proxy}>Yes</button>
-    <button on:click={()=>{$use_proxy=!$use_proxy;$proxy_list=""}} class="active">No</button>
+    <span>use proxies</span>
+    <button on:click={()=>$use_proxy=!$use_proxy}>yes</button>
+    <button on:click={()=>{$use_proxy=!$use_proxy;$proxy_list=""}} class="active">no</button>
    </div>
 
    <div class=" menu-item change_latency">
-    <span>Change Latency Min|Max</span>
+    <span>change latency min|max</span>
     <input bind:value={$min_ms} type="text" placeholder="lowest">
     <input bind:value={$max_ms} type="text" placeholder="highest">
    </div>
 {#if $use_proxy}
    <div class=" menu-item proxy_list">
-    <p>Enter Proxy List Each Line</p>
+    <p>enter proxy list each line</p>
     <textarea bind:value={$proxy_list}></textarea>
     <div>
-        <button on:click={testProxies}>Test Proxies</button>
-        <button on:click={()=>invoke("save_proxies",{proxies:$proxy_list})}>Save Proxies</button>
+        <button on:click={testProxies}>test proxies</button>
+        <button on:click={()=>invoke("save_proxies",{proxies:$proxy_list})}>save proxies</button>
     </div>
    </div>
    {/if }

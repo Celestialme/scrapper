@@ -3,10 +3,10 @@
   <Menu/>
   <ProgressBar {value} {max_value} {keyword} />
   {#if !crawler_ready}
-   <label  for="file"> Upload Text File</label> <input  type="file" id='file' hidden bind:files={files} on:change={read_file}>
+   <label  for="file"> upload text file</label> <input  type="file" id='file' hidden bind:files={files} on:change={read_file}>
    {/if}
    {#if crawler_ready} 
-   <button on:click={start}>Start Crawling</button>
+   <button on:click={start}>start crawling</button>
    {/if}
 </div>
 
@@ -85,11 +85,17 @@ async function parse_html(html:string){
    
 </script>
 <style>
+  @font-face {
+  font-family: Cinzel;
+  src: url(../static/fonts/Cinzel-SemiBold.ttf);
+}
+
   :global(*){
     margin:0;
     padding:0;
     box-sizing:border-box;
-    
+
+    font-family: 'Cinzel', serif;
     
   }
   :global(.body,.menu){
@@ -121,7 +127,7 @@ label,button{
     border: 1px solid;
     padding: 15px;
     border-radius: 10px;
-    font-family: monospace;
+    
     background-color:#00f7ff;
     color:black;
 }
