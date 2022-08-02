@@ -24,9 +24,9 @@ struct Sleep{
 }
 
 
-const  PROXIES_FILE:&str = "../proxies.txt";
-const URLS_FILE:&str = "../urls.txt";
-const UAGENTS_FILE:&str = "../user_agents.txt";
+const  PROXIES_FILE:&str = "proxies.txt";
+const URLS_FILE:&str = "urls.txt";
+const UAGENTS_FILE:&str = "user_agents.txt";
 
 
 
